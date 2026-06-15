@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/db.min.js"></script>
 <script>
   window.__supabaseLib = window.supabase;
 </script>
@@ -605,7 +605,7 @@ if (!window.__supabaseLib) {
 // =====================================================================
 // CONFIG
 // =====================================================================
-const SUPABASE_URL = "https://fkwoiaxmmjfegiltawkg.supabase.co";
+const SUPABASE_URL = "https://fkwoiaxmmjfegiltawkg.db.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrd29pYXhtbWpmZWdpbHRhd2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjQ3MjAsImV4cCI6MjA5NjY0MDcyMH0.0lAsh7avrfmp7Qy8LVXcanwUwI1IaNvYLfk61UuL734";
 const CLUB_ID = "e87a3c69-ce71-41da-b37c-690f050409c3";
 
@@ -907,7 +907,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
       setLockStatus("free"); // completed games — no lock needed for review
       return;
     }
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("game_locks")
       .select("*")
       .eq("club_id", CLUB_ID)
@@ -926,7 +926,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
       setLockOwner(null);
     } else {
       // fetch the coach name
-      const { data: coach } = await supabase
+      const { data: coach } = await db
         .from("coaches")
         .select("display_name")
         .eq("id", data.locked_by)
@@ -957,7 +957,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
   }
 
   async function releaseLock() {
-    await supabase
+    await db
       .from("game_locks")
       .delete()
       .eq("club_id", CLUB_ID)
@@ -994,7 +994,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
   useEffect(() => {
     if (!waitingForAccess) return;
     const interval = setInterval(async () => {
-      const { data: req } = await supabase
+      const { data: req } = await db
         .from("game_access_requests")
         .select("*")
         .eq("club_id", CLUB_ID)
@@ -1006,7 +1006,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
 
       if (!req) {
         // Request cleared — check if lock is also gone
-        const { data: lock } = await supabase
+        const { data: lock } = await db
           .from("game_locks")
           .select("*")
           .eq("club_id", CLUB_ID)
@@ -1032,7 +1032,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
   useEffect(() => {
     if (lockStatus !== "mine") return;
     const interval = setInterval(async () => {
-      const { data: req } = await supabase
+      const { data: req } = await db
         .from("game_access_requests")
         .select("*")
         .eq("club_id", CLUB_ID)
@@ -1171,7 +1171,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
     setSaveStatus("saving");
     const payload = await buildUpdatePayload();
     delete payload.opponent_goals_by_quarter_;
-    const { error } = await supabase
+    const { error } = await db
       .from("games")
       .update(payload)
       .eq("id", game.id);
@@ -1193,7 +1193,7 @@ function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack
       opponent_score: opponentScore
     });
     delete payload.opponent_goals_by_quarter_;
-    const { error } = await supabase
+    const { error } = await db
       .from("games")
       .update(payload)
       .eq("id", game.id);
@@ -1500,14 +1500,14 @@ function App() {
   useEffect(() => {
     if (!session) return;
     (async () => {
-      const { data: coach } = await supabase
+      const { data: coach } = await db
         .from("coaches")
         .select("display_name")
         .eq("id", session.user.id)
         .maybeSingle();
       setCoachName(coach?.display_name || session.user.email);
 
-      const { data: gamesData } = await supabase
+      const { data: gamesData } = await db
         .from("games")
         .select("*")
         .eq("club_id", CLUB_ID);
