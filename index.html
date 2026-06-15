@@ -671,7 +671,7 @@ function LoginScreen({ onLoggedIn }) {
     const { data, error } = await db.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message || "Could not sign in. Check your email and password.");
+      setError(JSON.stringify({ message: error.message, status: error.status, name: error.name, code: error.code }, null, 2));
       return;
     }
     onLoggedIn(data.session);
@@ -702,7 +702,7 @@ function LoginScreen({ onLoggedIn }) {
               required
             />
           </div>
-          {error && <div className="error-msg">{error}</div>}
+          {error && <pre className="error-msg" style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>{error}</pre>}
           <div style={{ marginTop: 22 }}>
             <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? "Signing in…" : "Sign In"}
