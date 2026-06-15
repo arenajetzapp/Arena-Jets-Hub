@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arena Jetz — Game Day</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  window.__supabaseLib = window.supabase;
+</script>
+<style>
+  :root {
+    --purple: #5B1E8F;
+    --purple-dark: #3C1466;
+    --purple-light: #EEEDFE;
+    --ink: #2E123F;
+    --paper: #F7F1FA;
+    --line: #E0D8EA;
+    --gold: #F4A300;
+    --green: #2E7D32;
+    --red: #C62828;
+    --grey: #8A8194;
+    --court: #FBF8FD;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Header ===== */
+  .topbar {
+    background: var(--purple);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(91,30,143,0.18);
+  }
+  .topbar .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .topbar .brand h1 {
+    font-size: 22px;
+    color: #fff;
+  }
+  .topbar .brand .tag {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 600;
+  }
+  .topbar .session {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .topbar button.linklike {
+    background: none;
+    border: none;
+    color: #fff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+  }
+
+  /* ===== Login ===== */
+  .login-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 8px 32px rgba(91,30,143,0.10);
+    border: 1px solid var(--line);
+  }
+  .login-card h2 {
+    font-size: 26px;
+    color: var(--purple-dark);
+    margin-bottom: 4px;
+  }
+  .login-card .sub {
+    color: var(--grey);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--grey);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fff;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: 2px solid var(--purple);
+    outline-offset: 1px;
+    border-color: var(--purple);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.05s ease;
+    font-family: inherit;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--purple);
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: 0.55; cursor: default; }
+  .btn-secondary {
+    background: var(--purple-light);
+    color: var(--purple-dark);
+  }
+  .btn-secondary:hover { filter: brightness(0.97); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--purple-dark);
+    border: 1.5px solid var(--line);
+  }
+  .btn-ghost:hover { background: var(--purple-light); }
+  .btn-danger {
+    background: #fff;
+    color: var(--red);
+    border: 1.5px solid #F1C4C4;
+  }
+  .btn-danger:hover { background: #FBEAEA; }
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  /* ===== Main layout ===== */
+  .main {
+    flex: 1;
+    padding: 24px 28px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .selector-bar {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .selector-bar .field { margin-bottom: 0; min-width: 180px; flex: 1; }
+  .selector-bar .field.small { min-width: 120px; flex: 0.4; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--grey);
+  }
+  .empty-state h3 {
+    color: var(--purple-dark);
+    margin-bottom: 8px;
+    font-size: 20px;
+  }
+
+  /* ===== Game header card ===== */
+  .game-header {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .game-info-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 22px;
+    flex: 1;
+    min-width: 240px;
+  }
+  .game-info-card .eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--grey);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .game-info-card h2 {
+    font-size: 24px;
+    color: var(--purple-dark);
+    margin-bottom: 6px;
+  }
+  .game-info-card .meta {
+    color: var(--grey);
+    font-size: 14px;
+  }
+  .score-card {
+    background: var(--purple);
+    color: #fff;
+    border-radius: 12px;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .score-block { text-align: center; }
+  .score-block .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.7);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .score-block .value {
+    font-family: 'Georgia', serif;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .score-block .value.small { font-size: 24px; }
+
+  /* ===== Banners ===== */
+  .banner {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .banner.warn {
+    background: #FFF4E0;
+    border: 1px solid #F4D9A6;
+    color: #8A5A00;
+  }
+  .banner.info {
+    background: var(--purple-light);
+    border: 1px solid #D9CFF2;
+    color: var(--purple-dark);
+  }
+  .banner.success {
+    background: #E6F4E8;
+    border: 1px solid #B9DEC1;
+    color: var(--green);
+  }
+  .banner.locked {
+    background: #FBEAEA;
+    border: 1px solid #F1C4C4;
+    color: var(--red);
+  }
+  .banner .banner-actions { display: flex; gap: 8px; }
+
+  /* ===== Quarter tabs ===== */
+  .quarter-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .quarter-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    border-radius: 10px;
+    background: #fff;
+    border: 1.5px solid var(--line);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ink);
+    transition: all 0.12s ease;
+    font-size: 15px;
+  }
+  .quarter-tab:hover { border-color: var(--purple); }
+  .quarter-tab.active {
+    background: var(--purple);
+    color: #fff;
+    border-color: var(--purple);
+  }
+  .quarter-tab .lock-icon { font-size: 12px; margin-left: 4px; }
+
+  /* ===== Quarter summary strip ===== */
+  .qsummary {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .qsummary .stat { text-align: center; }
+  .qsummary .stat .num {
+    font-family: 'Georgia', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--purple-dark);
+  }
+  .qsummary .stat .lbl {
+    font-size: 12px;
+    color: var(--grey);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+  .counter-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .counter-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--purple-light);
+    color: var(--purple-dark);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .counter-btn:hover { background: var(--purple); color: #fff; }
+  .counter-btn:disabled { opacity: 0.4; cursor: default; }
+
+  /* ===== Player table ===== */
+  .player-table {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .player-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 130px;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    gap: 10px;
+  }
+  .player-row:last-child { border-bottom: none; }
+  .player-row.scoring { background: var(--court); }
+  .player-row .pname {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .player-row .fillin-tag {
+    font-size: 11px;
+    color: var(--grey);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .pos-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--purple-light);
+    color: var(--purple-dark);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .pos-badge.scoring { background: var(--gold); color: #fff; }
+  .pos-badge.off { background: var(--line); color: var(--grey); }
+  .player-row select {
+    padding: 6px 8px;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+  }
+  .goal-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .goal-count {
+    font-family: 'Georgia', serif;
+    font-weight: 700;
+    font-size: 18px;
+    min-width: 20px;
+    text-align: center;
+    color: var(--purple-dark);
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 1fr 110px 130px;
+    padding: 10px 18px;
+    background: var(--purple-light);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--purple-dark);
+    font-weight: 700;
+  }
+  .table-header .right { text-align: right; }
+
+  /* ===== Notes & POTM ===== */
+  .section-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .section-card h3 {
+    font-size: 16px;
+    color: var(--purple-dark);
+    margin-bottom: 12px;
+  }
+  .potm-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+  }
+  .potm-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .potm-item:hover { background: var(--purple-light); }
+  .potm-item input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--purple);
+  }
+
+  /* ===== Footer action bar ===== */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  /* ===== Modal ===== */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(46,18,63,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(46,18,63,0.25);
+  }
+  .modal h3 {
+    font-size: 20px;
+    color: var(--purple-dark);
+    margin-bottom: 14px;
+  }
+  .modal .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .loading-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--grey);
+    font-size: 15px;
+  }
+
+  .badge-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge-pill.planned { background: var(--purple-light); color: var(--purple-dark); }
+  .badge-pill.completed { background: #E6F4E8; color: var(--green); }
+
+  @media (max-width: 720px) {
+    .main { padding: 16px; }
+    .table-header { display: none; }
+    .player-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .goal-cell { justify-content: flex-start; }
+    .score-card { gap: 18px; padding: 14px 18px; }
+    .score-block .value { font-size: 26px; }
+    .qsummary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useRef } = React;
+
+if (!window.__supabaseLib) {
+  document.getElementById("root").innerHTML =
+    '<div style="padding:40px;font-family:sans-serif;color:#C62828"><h2>Could not load required libraries</h2><p>This usually happens when opening the file directly (file://). Please run a local web server, e.g.:</p><pre>python3 -m http.server 8000</pre><p>then open http://localhost:8000/index.html in your browser.</p></div>';
+  throw new Error("Supabase library failed to load");
+}
+
+// =====================================================================
+// CONFIG
+// =====================================================================
+const SUPABASE_URL = "https://fkwoiaxmmjfegiltawkg.db.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrd29pYXhtbWpmZWdpbHRhd2tnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjQ3MjAsImV4cCI6MjA5NjY0MDcyMH0.0lAsh7avrfmp7Qy8LVXcanwUwI1IaNvYLfk61UuL734";
+const CLUB_ID = "e87a3c69-ce71-41da-b37c-690f050409c3";
+
+const db = window.__supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const COURT_POSITIONS = ["GS", "GA", "WA", "C", "WD", "GD", "GK"];
+const BENCH_POSITIONS = ["OFF", "NAP"];
+const ALL_POSITIONS = [...COURT_POSITIONS, ...BENCH_POSITIONS];
+const SCORING_POSITIONS = new Set(["GS", "GA"]);
+
+// =====================================================================
+// HELPERS
+// =====================================================================
+function sumQuarterMap(map) {
+  if (!map) return 0;
+  return Object.values(map).reduce((acc, v) => {
+    if (typeof v === "number") return acc + v;
+    if (typeof v === "object" && v !== null) {
+      return acc + Object.values(v).reduce((a, b) => a + (Number(b) || 0), 0);
+    }
+    return acc;
+  }, 0);
+}
+
+function totalGoals(goalsByQuarter) {
+  let total = 0;
+  for (const q of [1, 2, 3, 4]) {
+    const qmap = goalsByQuarter[q] || {};
+    total += Object.values(qmap).reduce((a, b) => a + (Number(b) || 0), 0);
+  }
+  return total;
+}
+
+function totalOpponentGoals(oppByQuarter) {
+  let total = 0;
+  for (const q of [1, 2, 3, 4]) {
+    total += Number(oppByQuarter[q] || 0);
+  }
+  return total;
+}
+
+function totalTurnovers(turnoversByQuarter) {
+  let total = 0;
+  for (const q of [1, 2, 3, 4]) {
+    total += Number(turnoversByQuarter[q] || 0);
+  }
+  return total;
+}
+
+function gameLabel(g) {
+  return `R${g.round} vs ${g.opponent} — ${g.game_date}`;
+}
+
+// =====================================================================
+// LOGIN SCREEN
+// =====================================================================
+function LoginScreen({ onLoggedIn }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      setError(error.message || "Could not sign in. Check your email and password.");
+      return;
+    }
+    onLoggedIn(data.session);
+  }
+
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <h2>Arena Jetz</h2>
+        <div className="sub">Game Day — Coach Login</div>
+        <form onSubmit={handleLogin}>
+          <div className="field">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && <div className="error-msg">{error}</div>}
+          <div style={{ marginTop: 22 }}>
+            <button className="btn btn-primary" type="submit" disabled={loading}>
+              {loading ? "Signing in…" : "Sign In"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// GAME SELECTOR
+// =====================================================================
+function GameSelector({ games, selectedId, onSelect }) {
+  // Group by season
+  const seasons = [...new Set(games.map(g => g.season_name))];
+  const [season, setSeason] = useState(seasons[0] || "");
+
+  useEffect(() => {
+    if (seasons.length && !seasons.includes(season)) {
+      setSeason(seasons[0]);
+    }
+  }, [games]);
+
+  const filtered = games
+    .filter(g => g.season_name === season)
+    .sort((a, b) => a.round - b.round);
+
+  return (
+    <div className="selector-bar">
+      <div className="field small">
+        <label>Season</label>
+        <select value={season} onChange={e => setSeason(e.target.value)}>
+          {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+      <div className="field">
+        <label>Game</label>
+        <select
+          value={selectedId || ""}
+          onChange={e => onSelect(e.target.value)}
+        >
+          <option value="">Select a game…</option>
+          {filtered.map(g => (
+            <option key={g.id} value={g.id}>
+              {gameLabel(g)} {g.is_completed ? "(Completed)" : "(Planned)"}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// QUARTER TABS
+// =====================================================================
+function QuarterTabs({ selected, onSelect, lockedQuarters }) {
+  return (
+    <div className="quarter-tabs">
+      {[1, 2, 3, 4].map(q => (
+        <div
+          key={q}
+          className={"quarter-tab" + (selected === q ? " active" : "")}
+          onClick={() => onSelect(q)}
+        >
+          Q{q}
+          {lockedQuarters[q] && <span className="lock-icon">🔒</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// =====================================================================
+// PLAYER ROW
+// =====================================================================
+function PlayerRow({ player, position, goals, locked, usedPositions, onPositionChange, onGoalChange }) {
+  const isScoring = SCORING_POSITIONS.has(position);
+
+  function posOptionDisabled(p) {
+    if (p === position) return false;
+    if (!COURT_POSITIONS.includes(p)) return false;
+    return usedPositions.has(p);
+  }
+
+  return (
+    <div className={"player-row" + (isScoring ? " scoring" : "")}>
+      <div className="pname">
+        {player.name}
+        {player.wasFillIn && <span className="fillin-tag">(Fill-In)</span>}
+      </div>
+      <div>
+        <select
+          value={position}
+          disabled={locked}
+          onChange={e => onPositionChange(player.name, e.target.value)}
+        >
+          {ALL_POSITIONS.map(p => (
+            <option key={p} value={p} disabled={posOptionDisabled(p)}>
+              {p}{posOptionDisabled(p) ? " (in use)" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="goal-cell">
+        {isScoring ? (
+          <React.Fragment>
+            <button
+              className="counter-btn"
+              disabled={locked || goals <= 0}
+              onClick={() => onGoalChange(player.name, Math.max(0, goals - 1))}
+            >−</button>
+            <span className="goal-count">{goals}</span>
+            <button
+              className="counter-btn"
+              disabled={locked}
+              onClick={() => onGoalChange(player.name, goals + 1)}
+            >+</button>
+          </React.Fragment>
+        ) : (
+          <span style={{ color: "var(--line)" }}>—</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// MAIN GAME EDITOR
+// =====================================================================
+function GameEditor({ game, currentUserId, currentUserName, onGameChange, onBack }) {
+  const [positionsByQuarter, setPositionsByQuarter] = useState({});
+  const [goalsByQuarter, setGoalsByQuarter] = useState({});
+  const [opponentGoalsByQuarter, setOpponentGoalsByQuarter] = useState({});
+  const [turnoversByQuarter, setTurnoversByQuarter] = useState({});
+  const [quarterNotes, setQuarterNotes] = useState({});
+  const [playersOfMatch, setPlayersOfMatch] = useState([]);
+  const [potmComments, setPotmComments] = useState({});
+  const [selectedQuarter, setSelectedQuarter] = useState(1);
+  const [players, setPlayers] = useState([]);
+
+  // Lock / access request state
+  const [lockOwner, setLockOwner] = useState(null); // {locked_by, name} or null
+  const [lockStatus, setLockStatus] = useState("checking"); // checking | mine | locked | free
+  const [accessRequest, setAccessRequest] = useState(null); // pending request FROM someone else
+  const [waitingForAccess, setWaitingForAccess] = useState(false);
+
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [saveStatus, setSaveStatus] = useState(""); // "", "saving", "saved"
+
+  const isCompleted = game.is_completed;
+  const locked = isCompleted || lockStatus === "locked";
+
+  // -------------------------------------------------------------
+  // Load game state into editable form
+  // -------------------------------------------------------------
+  useEffect(() => {
+    const snapshot = game.players_snapshot || [];
+    setPlayers(snapshot);
+
+    const pbq = {};
+    const gbq = {};
+    for (const q of [1, 2, 3, 4]) {
+      pbq[q] = { ...(game.positions_by_quarter?.[q] || {}) };
+      gbq[q] = { ...(game.goals_by_quarter?.[q] || {}) };
+      // Ensure every player has an entry
+      snapshot.forEach(p => {
+        if (!(p.name in pbq[q])) pbq[q][p.name] = "OFF";
+      });
+    }
+    setPositionsByQuarter(pbq);
+    setGoalsByQuarter(gbq);
+
+    const obq = {};
+    const tbq = {};
+    for (const q of [1, 2, 3, 4]) {
+      obq[q] = Number(game.opponent_goals_by_quarter?.[q] || 0);
+      tbq[q] = Number(game.turnovers_by_quarter?.[q] || 0);
+    }
+    setOpponentGoalsByQuarter(obq);
+    setTurnoversByQuarter(tbq);
+
+    setQuarterNotes(game.quarter_notes || {});
+    setPlayersOfMatch(game.players_of_match || []);
+    setPotmComments(game.potm_comments || {});
+    setSelectedQuarter(1);
+  }, [game.id]);
+
+  // -------------------------------------------------------------
+  // Lock check on open
+  // -------------------------------------------------------------
+  const checkLock = useCallback(async () => {
+    if (isCompleted) {
+      setLockStatus("free"); // completed games — no lock needed for review
+      return;
+    }
+    const { data, error } = await supabase
+      .from("game_locks")
+      .select("*")
+      .eq("club_id", CLUB_ID)
+      .eq("season_name", game.season_name)
+      .eq("round", game.round)
+      .eq("opponent", game.opponent)
+      .maybeSingle();
+
+    if (error || !data) {
+      setLockStatus("free");
+      setLockOwner(null);
+      return;
+    }
+    if (data.locked_by === currentUserId) {
+      setLockStatus("mine");
+      setLockOwner(null);
+    } else {
+      // fetch the coach name
+      const { data: coach } = await supabase
+        .from("coaches")
+        .select("display_name")
+        .eq("id", data.locked_by)
+        .maybeSingle();
+      setLockOwner({ locked_by: data.locked_by, name: coach?.display_name || "Another coach" });
+      setLockStatus("locked");
+    }
+  }, [game.id, currentUserId, isCompleted]);
+
+  useEffect(() => {
+    checkLock();
+  }, [checkLock]);
+
+  // -------------------------------------------------------------
+  // Take lock (after free check, or after access granted)
+  // -------------------------------------------------------------
+  async function takeLock() {
+    await db.from("game_locks").upsert({
+      club_id: CLUB_ID,
+      season_name: game.season_name,
+      round: game.round,
+      opponent: game.opponent,
+      locked_by: currentUserId,
+      locked_at: Date.now()
+    }, { onConflict: "club_id,season_name,round,opponent" });
+    setLockStatus("mine");
+    setLockOwner(null);
+  }
+
+  async function releaseLock() {
+    await supabase
+      .from("game_locks")
+      .delete()
+      .eq("club_id", CLUB_ID)
+      .eq("season_name", game.season_name)
+      .eq("round", game.round)
+      .eq("opponent", game.opponent)
+      .eq("locked_by", currentUserId);
+  }
+
+  // -------------------------------------------------------------
+  // Request access
+  // -------------------------------------------------------------
+  async function requestAccess() {
+    await db.from("game_access_requests").delete()
+      .eq("club_id", CLUB_ID)
+      .eq("season_name", game.season_name)
+      .eq("round", game.round)
+      .eq("opponent", game.opponent)
+      .eq("requested_by", currentUserId);
+
+    await db.from("game_access_requests").insert({
+      club_id: CLUB_ID,
+      season_name: game.season_name,
+      round: game.round,
+      opponent: game.opponent,
+      requested_by: currentUserId,
+      requested_by_name: currentUserName,
+      status: "pending"
+    });
+    setWaitingForAccess(true);
+  }
+
+  // Poll while waiting for access
+  useEffect(() => {
+    if (!waitingForAccess) return;
+    const interval = setInterval(async () => {
+      const { data: req } = await supabase
+        .from("game_access_requests")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .eq("season_name", game.season_name)
+        .eq("round", game.round)
+        .eq("opponent", game.opponent)
+        .eq("status", "pending")
+        .maybeSingle();
+
+      if (!req) {
+        // Request cleared — check if lock is also gone
+        const { data: lock } = await supabase
+          .from("game_locks")
+          .select("*")
+          .eq("club_id", CLUB_ID)
+          .eq("season_name", game.season_name)
+          .eq("round", game.round)
+          .eq("opponent", game.opponent)
+          .maybeSingle();
+
+        if (!lock || lock.locked_by === currentUserId) {
+          await takeLock();
+          setWaitingForAccess(false);
+        } else {
+          // Declined
+          setWaitingForAccess(false);
+          await checkLock();
+        }
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [waitingForAccess, game.id]);
+
+  // Poll for incoming access requests while we hold the lock
+  useEffect(() => {
+    if (lockStatus !== "mine") return;
+    const interval = setInterval(async () => {
+      const { data: req } = await supabase
+        .from("game_access_requests")
+        .select("*")
+        .eq("club_id", CLUB_ID)
+        .eq("season_name", game.season_name)
+        .eq("round", game.round)
+        .eq("opponent", game.opponent)
+        .eq("status", "pending")
+        .maybeSingle();
+      if (req) {
+        setAccessRequest(req);
+      }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [lockStatus, game.id]);
+
+  async function handOverAccess() {
+    await db.from("game_access_requests").delete()
+      .eq("club_id", CLUB_ID)
+      .eq("season_name", game.season_name)
+      .eq("round", game.round)
+      .eq("opponent", game.opponent);
+    await releaseLock();
+    setAccessRequest(null);
+    onBack();
+  }
+
+  async function declineAccess() {
+    await db.from("game_access_requests").delete()
+      .eq("club_id", CLUB_ID)
+      .eq("season_name", game.season_name)
+      .eq("round", game.round)
+      .eq("opponent", game.opponent);
+    setAccessRequest(null);
+  }
+
+  // Release lock when leaving (back button)
+  async function handleBack() {
+    if (lockStatus === "mine") {
+      await releaseLock();
+    }
+    onBack();
+  }
+
+  // -------------------------------------------------------------
+  // Derived values
+  // -------------------------------------------------------------
+  const ourScore = totalGoals(goalsByQuarter);
+  const opponentScore = totalOpponentGoals(opponentGoalsByQuarter);
+  const turnoverTotal = totalTurnovers(turnoversByQuarter);
+  const quarterGoals = Object.values(goalsByQuarter[selectedQuarter] || {}).reduce((a, b) => a + (Number(b) || 0), 0);
+
+  const usedPositions = new Set(
+    Object.entries(positionsByQuarter[selectedQuarter] || {})
+      .filter(([, pos]) => COURT_POSITIONS.includes(pos))
+      .map(([, pos]) => pos)
+  );
+
+  const lockedQuarters = {};
+  for (const q of [1, 2, 3, 4]) {
+    lockedQuarters[q] = isCompleted;
+  }
+
+  const orderedPlayers = [...players].sort((a, b) => {
+    const aScoring = SCORING_POSITIONS.has(positionsByQuarter[selectedQuarter]?.[a.name]);
+    const bScoring = SCORING_POSITIONS.has(positionsByQuarter[selectedQuarter]?.[b.name]);
+    if (aScoring !== bScoring) return aScoring ? -1 : 1;
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+  });
+
+  // -------------------------------------------------------------
+  // Position / goal change handlers
+  // -------------------------------------------------------------
+  function handlePositionChange(playerName, newPos) {
+    setPositionsByQuarter(prev => {
+      const qmap = { ...(prev[selectedQuarter] || {}) };
+      // displace anyone currently in that court position
+      if (COURT_POSITIONS.includes(newPos)) {
+        for (const [name, pos] of Object.entries(qmap)) {
+          if (pos === newPos && name !== playerName) {
+            qmap[name] = "OFF";
+          }
+        }
+      }
+      qmap[playerName] = newPos;
+      return { ...prev, [selectedQuarter]: qmap };
+    });
+  }
+
+  function handleGoalChange(playerName, newGoals) {
+    setGoalsByQuarter(prev => {
+      const qmap = { ...(prev[selectedQuarter] || {}) };
+      if (newGoals <= 0) {
+        delete qmap[playerName];
+      } else {
+        qmap[playerName] = newGoals;
+      }
+      return { ...prev, [selectedQuarter]: qmap };
+    });
+  }
+
+  function openNotesModal() {
+    setNotesDraft(quarterNotes[selectedQuarter] || "");
+    setShowNotesModal(true);
+  }
+
+  function saveNotes() {
+    setQuarterNotes(prev => {
+      const next = { ...prev };
+      if (notesDraft.trim()) next[selectedQuarter] = notesDraft;
+      else delete next[selectedQuarter];
+      return next;
+    });
+    setShowNotesModal(false);
+  }
+
+  // -------------------------------------------------------------
+  // Save to Supabase
+  // -------------------------------------------------------------
+  async function buildUpdatePayload(overrides = {}) {
+    return {
+      players_snapshot: players,
+      positions_by_quarter: positionsByQuarter,
+      goals_by_quarter: goalsByQuarter,
+      opponent_goals_by_quarter: opponentGoalsByQuarter,
+      turnovers_by_quarter: turnoversByQuarter,
+      quarter_notes: quarterNotes,
+      players_of_match: playersOfMatch,
+      potm_comments: potmComments,
+      our_score: ourScore,
+      opponent_goals_by_quarter_: undefined,
+      ...overrides
+    };
+  }
+
+  async function handleSave() {
+    setSaveStatus("saving");
+    const payload = await buildUpdatePayload();
+    delete payload.opponent_goals_by_quarter_;
+    const { error } = await supabase
+      .from("games")
+      .update(payload)
+      .eq("id", game.id);
+    if (error) {
+      console.error(error);
+      setSaveStatus("");
+      alert("Save failed: " + error.message);
+      return;
+    }
+    setSaveStatus("saved");
+    onGameChange({ ...game, ...payload });
+    setTimeout(() => setSaveStatus(""), 2000);
+  }
+
+  async function handleSubmit() {
+    const payload = await buildUpdatePayload({
+      is_completed: true,
+      our_score: ourScore,
+      opponent_score: opponentScore
+    });
+    delete payload.opponent_goals_by_quarter_;
+    const { error } = await supabase
+      .from("games")
+      .update(payload)
+      .eq("id", game.id);
+    if (error) {
+      alert("Submit failed: " + error.message);
+      return;
+    }
+    if (lockStatus === "mine") await releaseLock();
+    setShowSubmitModal(false);
+    onGameChange({ ...game, ...payload });
+    onBack();
+  }
+
+  function togglePOTM(name) {
+    setPlayersOfMatch(prev => {
+      if (prev.includes(name)) {
+        const next = prev.filter(n => n !== name);
+        return next;
+      }
+      return [...prev, name];
+    });
+  }
+
+  // -------------------------------------------------------------
+  // Render: locked banner / access request flow
+  // -------------------------------------------------------------
+  if (lockStatus === "checking") {
+    return <div className="loading-screen">Checking game status…</div>;
+  }
+
+  if (lockStatus === "locked" && !waitingForAccess) {
+    return (
+      <div>
+        <div className="banner locked">
+          <span>
+            <strong>{lockOwner?.name}</strong> is currently editing this game.
+            Would you like to request access?
+          </span>
+          <div className="banner-actions">
+            <button className="btn btn-secondary" onClick={requestAccess}>Request Access</button>
+            <button className="btn btn-ghost" onClick={onBack}>Back</button>
+          </div>
+        </div>
+        <GameHeaderCard game={game} ourScore={game.our_score} opponentScore={game.opponent_score} turnovers={totalTurnovers(game.turnovers_by_quarter || {})} />
+      </div>
+    );
+  }
+
+  if (waitingForAccess) {
+    return (
+      <div>
+        <div className="banner info">
+          <span>Waiting for <strong>{lockOwner?.name}</strong> to release this game… we'll open it automatically.</span>
+          <div className="banner-actions">
+            <button className="btn btn-ghost" onClick={() => setWaitingForAccess(false)}>Cancel</button>
+          </div>
+        </div>
+        <GameHeaderCard game={game} ourScore={game.our_score} opponentScore={game.opponent_score} turnovers={totalTurnovers(game.turnovers_by_quarter || {})} />
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // Main editor render
+  // -------------------------------------------------------------
+  return (
+    <div>
+      {accessRequest && (
+        <div className="banner warn">
+          <span><strong>{accessRequest.requested_by_name}</strong> wants to take over editing this game. Hand over?</span>
+          <div className="banner-actions">
+            <button className="btn btn-secondary" onClick={handOverAccess}>Hand Over</button>
+            <button className="btn btn-ghost" onClick={declineAccess}>Decline</button>
+          </div>
+        </div>
+      )}
+
+      {isCompleted && (
+        <div className="banner info">
+          <span>This game has been submitted. You're viewing the final record.</span>
+        </div>
+      )}
+
+      <GameHeaderCard
+        game={game}
+        ourScore={ourScore}
+        opponentScore={opponentScore}
+        turnovers={turnoverTotal}
+      />
+
+      <QuarterTabs selected={selectedQuarter} onSelect={setSelectedQuarter} lockedQuarters={lockedQuarters} />
+
+      <div className="qsummary">
+        <div className="stat">
+          <div className="num">{quarterGoals}</div>
+          <div className="lbl">Q{selectedQuarter} Goals</div>
+        </div>
+        <div className="stat">
+          <div className="num">{opponentGoalsByQuarter[selectedQuarter] || 0}</div>
+          <div className="lbl">Q{selectedQuarter} Opponent Goals</div>
+          {!locked && (
+            <div className="counter-controls">
+              <button className="counter-btn" disabled={(opponentGoalsByQuarter[selectedQuarter] || 0) <= 0}
+                onClick={() => setOpponentGoalsByQuarter(prev => ({ ...prev, [selectedQuarter]: Math.max(0, (prev[selectedQuarter] || 0) - 1) }))}>−</button>
+              <button className="counter-btn"
+                onClick={() => setOpponentGoalsByQuarter(prev => ({ ...prev, [selectedQuarter]: (prev[selectedQuarter] || 0) + 1 }))}>+</button>
+            </div>
+          )}
+        </div>
+        <div className="stat">
+          <div className="num">{turnoversByQuarter[selectedQuarter] || 0}</div>
+          <div className="lbl">Q{selectedQuarter} Turnovers</div>
+          {!locked && (
+            <div className="counter-controls">
+              <button className="counter-btn" disabled={(turnoversByQuarter[selectedQuarter] || 0) <= 0}
+                onClick={() => setTurnoversByQuarter(prev => ({ ...prev, [selectedQuarter]: Math.max(0, (prev[selectedQuarter] || 0) - 1) }))}>−</button>
+              <button className="counter-btn"
+                onClick={() => setTurnoversByQuarter(prev => ({ ...prev, [selectedQuarter]: (prev[selectedQuarter] || 0) + 1 }))}>+</button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="player-table">
+        <div className="table-header">
+          <div>Player</div>
+          <div>Position</div>
+          <div className="right">Goals</div>
+        </div>
+        {orderedPlayers.map(player => (
+          <PlayerRow
+            key={player.name}
+            player={player}
+            position={positionsByQuarter[selectedQuarter]?.[player.name] || "OFF"}
+            goals={(goalsByQuarter[selectedQuarter] || {})[player.name] || 0}
+            locked={locked}
+            usedPositions={usedPositions}
+            onPositionChange={handlePositionChange}
+            onGoalChange={handleGoalChange}
+          />
+        ))}
+      </div>
+
+      <div className="section-card">
+        <h3>Quarter {selectedQuarter} Notes</h3>
+        {quarterNotes[selectedQuarter] ? (
+          <p style={{ color: "var(--ink)", fontSize: 14, whiteSpace: "pre-wrap", marginBottom: 12 }}>
+            {quarterNotes[selectedQuarter]}
+          </p>
+        ) : (
+          <p style={{ color: "var(--grey)", fontSize: 14, marginBottom: 12 }}>No notes for this quarter yet.</p>
+        )}
+        {!locked && (
+          <button className="btn btn-ghost" onClick={openNotesModal}>
+            {quarterNotes[selectedQuarter] ? "Edit Notes" : "Add Notes"}
+          </button>
+        )}
+      </div>
+
+      {isCompleted && playersOfMatch.length > 0 && (
+        <div className="section-card">
+          <h3>Player(s) of the Match</h3>
+          {playersOfMatch.map(name => (
+            <div key={name} style={{ marginBottom: 8 }}>
+              <strong>{name}</strong>
+              {potmComments[name] && <p style={{ color: "var(--grey)", fontSize: 14, margin: "4px 0 0" }}>{potmComments[name]}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isCompleted && (
+        <div className="action-bar">
+          <button className="btn btn-ghost" onClick={handleBack}>← Back</button>
+          <button className="btn btn-secondary" onClick={handleSave}>
+            {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved ✓" : "Save"}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowSubmitModal(true)}>Submit Game</button>
+        </div>
+      )}
+      {isCompleted && (
+        <div className="action-bar">
+          <button className="btn btn-ghost" onClick={handleBack}>← Back</button>
+        </div>
+      )}
+
+      {/* Notes modal */}
+      {showNotesModal && (
+        <div className="modal-overlay" onClick={() => setShowNotesModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>Q{selectedQuarter} Notes</h3>
+            <div className="field">
+              <textarea rows={6} value={notesDraft} onChange={e => setNotesDraft(e.target.value)} placeholder="Enter notes for this quarter" />
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowNotesModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={saveNotes}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit modal */}
+      {showSubmitModal && (
+        <div className="modal-overlay" onClick={() => setShowSubmitModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>Submit Game</h3>
+            <p style={{ fontSize: 14, color: "var(--ink)" }}>Arena Jetz: <strong>{ourScore}</strong></p>
+            <p style={{ fontSize: 14, color: "var(--ink)", marginBottom: 14 }}>Opponent: <strong>{opponentScore}</strong></p>
+            <div className="field">
+              <label>Player(s) of the Match</label>
+              <div className="potm-list">
+                {[...players].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())).map(p => (
+                  <label key={p.name} className="potm-item">
+                    <input
+                      type="checkbox"
+                      checked={playersOfMatch.includes(p.name)}
+                      onChange={() => togglePOTM(p.name)}
+                    />
+                    <span>{p.name}{p.wasFillIn ? " (Fill-In)" : ""}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {playersOfMatch.map(name => (
+              <div className="field" key={name}>
+                <label>Comment for {name}</label>
+                <textarea
+                  rows={2}
+                  value={potmComments[name] || ""}
+                  onChange={e => setPotmComments(prev => ({ ...prev, [name]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowSubmitModal(false)}>Cancel</button>
+              <button className="btn btn-primary" disabled={playersOfMatch.length === 0} onClick={handleSubmit}>
+                Confirm & Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================================================================
+// GAME HEADER CARD
+// =====================================================================
+function GameHeaderCard({ game, ourScore, opponentScore, turnovers }) {
+  return (
+    <div className="game-header">
+      <div className="game-info-card">
+        <div className="eyebrow">{game.season_name}</div>
+        <h2>Round {game.round} vs {game.opponent}</h2>
+        <div className="meta">{game.game_date} • {game.game_time}</div>
+        <div className="meta">Court {game.court}</div>
+        <div style={{ marginTop: 8 }}>
+          <span className={"badge-pill " + (game.is_completed ? "completed" : "planned")}>
+            {game.is_completed ? "Completed" : "Planned"}
+          </span>
+        </div>
+      </div>
+      <div className="score-card">
+        <div className="score-block">
+          <div className="label">Arena Jetz</div>
+          <div className="value">{ourScore}</div>
+        </div>
+        <div className="score-block">
+          <div className="label">Opponent</div>
+          <div className="value small">{opponentScore}</div>
+        </div>
+        <div className="score-block">
+          <div className="label">Turnovers</div>
+          <div className="value small">{turnovers}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// APP ROOT
+// =====================================================================
+function App() {
+  const [session, setSession] = useState(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+  const [games, setGames] = useState([]);
+  const [selectedGameId, setSelectedGameId] = useState("");
+  const [coachName, setCoachName] = useState("");
+
+  useEffect(() => {
+    db.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoadingSession(false);
+    });
+    const { data: listener } = db.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    (async () => {
+      const { data: coach } = await supabase
+        .from("coaches")
+        .select("display_name")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      setCoachName(coach?.display_name || session.user.email);
+
+      const { data: gamesData } = await supabase
+        .from("games")
+        .select("*")
+        .eq("club_id", CLUB_ID);
+      setGames(gamesData || []);
+    })();
+  }, [session]);
+
+  function refreshGameInList(updatedGame) {
+    setGames(prev => prev.map(g => g.id === updatedGame.id ? { ...g, ...updatedGame } : g));
+  }
+
+  async function handleLogout() {
+    await db.auth.signOut();
+    setSession(null);
+    setSelectedGameId("");
+  }
+
+  if (loadingSession) {
+    return <div className="loading-screen">Loading…</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="app-shell">
+        <LoginScreen onLoggedIn={setSession} />
+      </div>
+    );
+  }
+
+  const selectedGame = games.find(g => g.id === selectedGameId);
+
+  return (
+    <div className="app-shell">
+      <div className="topbar">
+        <div className="brand">
+          <h1>Arena Jetz</h1>
+          <span className="tag">Game Day</span>
+        </div>
+        <div className="session">
+          <span>{coachName}</span>
+          <button className="linklike" onClick={handleLogout}>Sign out</button>
+        </div>
+      </div>
+      <div className="main">
+        <GameSelector games={games} selectedId={selectedGameId} onSelect={setSelectedGameId} />
+
+        {!selectedGame && (
+          <div className="empty-state">
+            <h3>Select a game</h3>
+            <p>Choose a season and game above to view or edit it.</p>
+          </div>
+        )}
+
+        {selectedGame && (
+          <GameEditor
+            key={selectedGame.id}
+            game={selectedGame}
+            currentUserId={session.user.id}
+            currentUserName={coachName}
+            onGameChange={refreshGameInList}
+            onBack={() => setSelectedGameId("")}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
