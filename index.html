@@ -687,18 +687,72 @@ function LoginScreen({ onLoggedIn }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("login"); // login | forgot
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    const { data, error } = await db.auth.signInWithPassword({ email: email.trim(), password: password.trim() });
     setLoading(false);
     if (error) {
-      setError(JSON.stringify({ message: error.message, status: error.status, name: error.name, code: error.code }, null, 2));
+      setError(error.message || "Could not sign in. Check your email and password.");
       return;
     }
     onLoggedIn(data.session);
+  }
+
+  async function handleForgotPassword(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const { error } = await db.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    setLoading(false);
+    if (error) {
+      setError(error.message || "Could not send reset email.");
+      return;
+    }
+    setResetSent(true);
+  }
+
+  if (mode === "forgot") {
+    return (
+      <div className="login-wrap">
+        <div className="login-card">
+          <h2>Reset Password</h2>
+          <div className="sub">Enter your email and we'll send you a reset link</div>
+          {resetSent ? (
+            <div>
+              <p style={{ fontSize: 14, color: "var(--green)" }}>
+                If an account exists for that email, a reset link has been sent. Check your inbox.
+              </p>
+              <div style={{ marginTop: 18 }}>
+                <button className="btn btn-ghost" onClick={() => { setMode("login"); setResetSent(false); }}>
+                  Back to login
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword}>
+              <div className="field">
+                <label>Email</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
+              </div>
+              {error && <div className="error-msg">{error}</div>}
+              <div style={{ marginTop: 22, display: "flex", gap: 10 }}>
+                <button className="btn btn-ghost" type="button" onClick={() => setMode("login")}>Cancel</button>
+                <button className="btn btn-primary" type="submit" disabled={loading} style={{ flex: 1 }}>
+                  {loading ? "Sending…" : "Send Reset Link"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -726,13 +780,141 @@ function LoginScreen({ onLoggedIn }) {
               required
             />
           </div>
-          {error && <pre className="error-msg" style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>{error}</pre>}
+          {error && <div className="error-msg">{error}</div>}
           <div style={{ marginTop: 22 }}>
             <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? "Signing in…" : "Sign In"}
             </button>
           </div>
+          <div style={{ marginTop: 14, textAlign: "center" }}>
+            <button type="button" className="linklike-purple" onClick={() => setMode("forgot")}
+              style={{ background: "none", border: "none", color: "var(--purple)", textDecoration: "underline", cursor: "pointer", fontSize: 13 }}>
+              Forgot password?
+            </button>
+          </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// SET NEW PASSWORD (shown after clicking a password reset link)
+// =====================================================================
+function SetNewPasswordScreen({ onDone }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await db.auth.updateUser({ password });
+    setLoading(false);
+    if (error) {
+      setError(error.message || "Could not update password.");
+      return;
+    }
+    onDone();
+  }
+
+  return (
+    <div className="login-wrap">
+      <div className="login-card">
+        <h2>Set New Password</h2>
+        <div className="sub">Choose a new password for your account</div>
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>New Password</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus />
+          </div>
+          <div className="field">
+            <label>Confirm Password</label>
+            <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+          </div>
+          {error && <div className="error-msg">{error}</div>}
+          <div style={{ marginTop: 22 }}>
+            <button className="btn btn-primary" type="submit" disabled={loading}>
+              {loading ? "Saving…" : "Save New Password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =====================================================================
+// CHANGE PASSWORD (from inside the app, normal flow)
+// =====================================================================
+function ChangePasswordModal({ onClose }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await db.auth.updateUser({ password });
+    setLoading(false);
+    if (error) {
+      setError(error.message || "Could not update password.");
+      return;
+    }
+    setSuccess(true);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <h3>Change Password</h3>
+        {success ? (
+          <div>
+            <p style={{ color: "var(--green)", fontSize: 14 }}>Password updated successfully.</p>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={onClose}>Done</button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label>New Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoFocus />
+            </div>
+            <div className="field">
+              <label>Confirm Password</label>
+              <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+            </div>
+            {error && <div className="error-msg">{error}</div>}
+            <div className="modal-actions">
+              <button className="btn btn-ghost" type="button" onClick={onClose}>Cancel</button>
+              <button className="btn btn-primary" type="submit" disabled={loading}>
+                {loading ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -1505,14 +1687,19 @@ function App() {
   const [games, setGames] = useState([]);
   const [selectedGameId, setSelectedGameId] = useState("");
   const [coachName, setCoachName] = useState("");
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   useEffect(() => {
     db.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoadingSession(false);
     });
-    const { data: listener } = db.auth.onAuthStateChange((_event, sess) => {
+    const { data: listener } = db.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+      }
     });
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -1549,6 +1736,15 @@ function App() {
     return <div className="loading-screen">Loading…</div>;
   }
 
+  // ✅ If the user arrived via a password reset link, force them to set a new password first
+  if (isPasswordRecovery && session) {
+    return (
+      <div className="app-shell">
+        <SetNewPasswordScreen onDone={() => setIsPasswordRecovery(false)} />
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="app-shell">
@@ -1568,6 +1764,7 @@ function App() {
         </div>
         <div className="session">
           <span>{coachName}</span>
+          <button className="linklike" onClick={() => setShowChangePassword(true)} style={{ marginRight: 4 }}>Change password</button>
           <button className="linklike" onClick={handleLogout}>Sign out</button>
         </div>
       </div>
@@ -1592,6 +1789,9 @@ function App() {
           />
         )}
       </div>
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
     </div>
   );
 }
